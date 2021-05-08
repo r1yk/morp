@@ -2,7 +2,7 @@
 midi_boxes.py
 """
 from copy import deepcopy
-from mido import open_output, open_input  # pylint: disable=no-name-in-module
+from mido import open_output, open_input, Message  # pylint: disable=no-name-in-module
 
 
 class MidiBox:
@@ -12,6 +12,7 @@ class MidiBox:
 
     def __init__(self, outputs=None):
         self.set_outputs(outputs or [])
+        self.notes_on = []
         self._fx_loop = None
         self._is_fx_return = False
 
@@ -37,14 +38,31 @@ class MidiBox:
         """_on_input"""
         if isinstance(message, list):
             for note in message:
-                output.handle_message(self.modifier(note), self._is_fx_return)
+                output.route_message(self.modifier(note), self._is_fx_return)
         else:
-            output.handle_message(self.modifier(message), self._is_fx_return)
+            output.route_message(self.modifier(message), self._is_fx_return)
 
-    def handle_message(self, message, fx_return=False):
-        """handle_message"""
+    def receive_message(self, message):
+        if message.type == 'note_on':
+            self.note_on(message)
+        if message.type == 'note_off':
+            self.note_off(message)
+
+    def note_on(self, message):
+        """note_on"""
+        self.route_message(message, self._is_fx_return)
+        self.notes_on = list(set([*self.notes_on, message.note]))
+
+    def note_off(self, message):
+        """note_off"""
+        self.route_message(message, self._is_fx_return)
+        self.notes_on = list(
+            filter(lambda note: note == message.note, self.notes_on))
+
+    def route_message(self, message, fx_return=False):
+        """route_message"""
         if self._fx_loop and not fx_return:
-            self._fx_loop.handle_message(message)
+            self._fx_loop.route_message(message)
         elif len(self.outputs) > 0:
             for output in self.outputs:
                 self._on_input(message, output)
@@ -62,10 +80,10 @@ class Loop:
         for i in range(0, len(boxes) - 1):
             boxes[i].set_outputs([*boxes[i].outputs, boxes[i + 1]])
 
-    def handle_message(self, message):
-        """ handle_message """
+    def route_message(self, message):
+        """ route_message """
         if len(self._boxes) > 0:
-            self._boxes[0].handle_message(message)
+            self._boxes[0].receive_message(message)
 
     def set_return(self, return_to):
         """ set_return """
@@ -87,8 +105,8 @@ class MidiOut(MidiBox):
         print('opened {}'.format(output_name))
         super().__init__()
 
-    def handle_message(self, message, fx_return=False):
-        """ handle_message """
+    def route_message(self, message, fx_return=False):
+        """ route_message """
         if isinstance(message, list):
             for note in message:
                 self.output.send(note)
@@ -103,12 +121,9 @@ class MidiIn(MidiBox):
 
     def __init__(self, input_name):
         self.input = open_input(input_name)
-        self.input.callback = self._receive_message
+        self.name = input_name
+        self.input.callback = self.receive_message
         super().__init__()
-
-    def _receive_message(self, message):
-        if message.type in ['note_on', 'note_off']:
-            self.handle_message(message)
 
 
 class Harmonizer(MidiBox):
@@ -137,9 +152,9 @@ class Shadow(MidiBox):
     def __init__(self):
         self.name = 'shadow'
         self.note_cache = []
-        self.interval = 3
-        self.feedback = 2
-        self.decay_factor = 0.3
+        self.interval = 1
+        self.feedback = 4
+        self.decay_factor = 0.7
         super().__init__()
 
     def modifier(self, message):
@@ -158,6 +173,34 @@ class Shadow(MidiBox):
             self.note_cache.pop()
 
         return messages
+
+
+class Pedal(MidiBox):
+    """
+    Pedal (as in sustain pedal)
+    """
+
+    def __init__(self):
+        self.name = 'pedal'
+        self.pedaling = False
+        self.pedal_notes = []
+        super().__init__()
+
+    def note_on(self, message):
+        if self.pedaling:
+            self.pedaling = False
+            for note in self.pedal_notes:
+                super().note_off(Message('note_off', note=note))
+            self.notes_on = []
+            self.pedal_notes = []
+        super().note_on(message)
+
+    def note_off(self, message):
+        self.pedal_notes = list(set([*self.pedal_notes, message.note]))
+        if len(self.notes_on) == 1:
+            self.pedaling = True
+        self.notes_on = list(
+            filter(lambda note: note == message.note, self.notes_on))
 
 
 class Chopper(MidiBox):
