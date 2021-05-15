@@ -34,20 +34,20 @@ class MidiBox:
         """set_is_fx_return"""
         self._is_fx_return = is_return
 
-    def receive_message(self, message, fx_return=False):
-        """receive_message"""
+    def on_message(self, message, fx_return=False):
+        """on_message"""
         if message.type == 'note_on' and message.velocity > 0:
-            self.note_on(message, fx_return)
-        else:
-            self.note_off(message, fx_return)
+            self.on_note_on(message, fx_return)
+        elif message.type == 'note_off':
+            self.on_note_off(message, fx_return)
 
-    def note_on(self, message, fx_return=False):
-        """note_on"""
+    def on_note_on(self, message, fx_return=False):
+        """on_note_on"""
         self.route_message(message, fx_return)
         self.notes_on = list(set([*self.notes_on, message.note]))
 
-    def note_off(self, message, fx_return=False):
-        """note_off"""
+    def on_note_off(self, message, fx_return=False):
+        """on_note_off"""
         self.route_message(message, fx_return)
         self.notes_on = list(
             filter(lambda note: note == message.note, self.notes_on))
@@ -55,10 +55,11 @@ class MidiBox:
     def route_message(self, message, fx_return=False):
         """route_message"""
         if self._fx_loop and not fx_return:
-            self._fx_loop.receive_message(message)
+            self._fx_loop.on_message(message)
         elif len(self.outputs) > 0:
+            # TODO: Figure out how to run these outputs in parallel
             for output in self.outputs:
-                output.receive_message(message, self._is_fx_return)
+                output.on_message(message, self._is_fx_return)
 
 
 class Loop:
@@ -73,10 +74,10 @@ class Loop:
         for i in range(0, len(boxes) - 1):
             boxes[i].set_outputs([*boxes[i].outputs, boxes[i + 1]])
 
-    def receive_message(self, message):
+    def on_message(self, message):
         """ route_message """
         if len(self._boxes) > 0:
-            self._boxes[0].receive_message(message)
+            self._boxes[0].on_message(message)
 
     def set_return(self, return_to):
         """ set_return """
@@ -115,7 +116,7 @@ class MidiIn(MidiBox):
     def __init__(self, input_name):
         self.input = open_input(input_name)
         self.name = input_name
-        self.input.callback = self.receive_message
+        self.input.callback = self.on_message
         super().__init__()
 
 
@@ -129,10 +130,10 @@ class Harmonizer(MidiBox):
         self.voices = []
         super().__init__()
 
-    def receive_message(self, message, fx_return=False):
-        super().receive_message(message, fx_return)
+    def on_message(self, message, fx_return=False):
+        super().on_message(message, fx_return)
         for voice in self.voices:
-            super().receive_message(message.copy(note=message.note + voice), fx_return)
+            super().on_message(message.copy(note=message.note + voice), fx_return)
 
 
 class Shadow(MidiBox):
@@ -177,16 +178,16 @@ class Pedal(MidiBox):
         self.pedal_notes = []
         super().__init__()
 
-    def note_on(self, message, fx_return=False):
+    def on_note_on(self, message, fx_return=False):
         if self.pedaling:
             self.pedaling = False
             for note in self.pedal_notes:
-                super().note_off(Message('note_off', note=note), fx_return)
+                super().on_note_off(Message('note_off', note=note), fx_return)
             self.notes_on = []
             self.pedal_notes = []
-        super().note_on(message, fx_return)
+        super().on_note_on(message, fx_return)
 
-    def note_off(self, message, fx_return=False):
+    def on_note_off(self, message, fx_return=False):
         self.pedal_notes = list(set([*self.pedal_notes, message.note]))
         if len(self.notes_on) == 1:
             self.pedaling = True
