@@ -37,7 +37,6 @@ class MidiBox:
     def on_message(self, message, fx_return=False):
         """on_message"""
         if message.type != 'clock':
-            print(message.type)
             if message.type == 'note_on' and message.velocity > 0:
                 self.on_note_on(message, fx_return)
             elif message.type == 'note_off':
@@ -56,6 +55,7 @@ class MidiBox:
 
     def route_message(self, message, fx_return=False):
         """route_message"""
+        message = self.modifier(message)
         if self._fx_loop and not fx_return:
             self._fx_loop.on_message(message)
         elif len(self.outputs) > 0:
@@ -101,9 +101,9 @@ class Harmonizer(MidiBox):
     Harmonizer
     """
 
-    def __init__(self):
+    def __init__(self, voices=None):
         self.name = 'harmonizer'
-        self.voices = []
+        self.voices = voices or []
         super().__init__()
 
     def on_message(self, message, fx_return=False):

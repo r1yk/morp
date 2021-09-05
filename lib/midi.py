@@ -2,6 +2,7 @@
 """
 midi.py
 """
+import os
 import mido
 from lib.midi_box import MidiBox
 
@@ -12,9 +13,8 @@ class MidiOut(MidiBox):
     """
 
     def __init__(self, output_name):
-        self.output = mido.open_output(output_name)
         self.name = output_name
-        print('opened {}'.format(output_name))
+        self.output = mido.open_output(output_name)
         super().__init__()
 
     def route_message(self, message, fx_return=False):
@@ -31,9 +31,9 @@ class MidiIn(MidiBox):
     MidiIn
     """
 
-    def __init__(self, input_name):
-        self.input = mido.open_input(input_name)
+    def __init__(self, input_name=os.getenv('DEFAULT_MIDI_INPUT')):
         self.name = input_name
+        self.input = mido.open_input(input_name)
         self.input.callback = self.on_message
         super().__init__()
 

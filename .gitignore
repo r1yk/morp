@@ -3,3 +3,6 @@ __pycache__
 notes
 .vscode
 kivy
+.env
+.coverage
+htmlcov
