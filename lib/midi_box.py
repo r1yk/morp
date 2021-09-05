@@ -36,10 +36,12 @@ class MidiBox:
 
     def on_message(self, message, fx_return=False):
         """on_message"""
-        if message.type == 'note_on' and message.velocity > 0:
-            self.on_note_on(message, fx_return)
-        elif message.type == 'note_off':
-            self.on_note_off(message, fx_return)
+        if message.type != 'clock':
+            print(message.type)
+            if message.type == 'note_on' and message.velocity > 0:
+                self.on_note_on(message, fx_return)
+            elif message.type == 'note_off':
+                self.on_note_off(message, fx_return)
 
     def on_note_on(self, message, fx_return=False):
         """on_note_on"""
@@ -60,32 +62,6 @@ class MidiBox:
             # TODO: Figure out how to run these outputs in parallel
             for output in self.outputs:
                 output.on_message(message, self._is_fx_return)
-
-
-class Loop:
-    """
-    Loop
-    """
-
-    def __init__(self, boxes=None):
-        self._boxes = boxes or []
-        # Connect the interior MidiBoxes to each other
-        # The final one is left unconnected so that the Loop may be reused by many MidiBoxes
-        for i in range(0, len(boxes) - 1):
-            boxes[i].set_outputs([*boxes[i].outputs, boxes[i + 1]])
-
-    def on_message(self, message):
-        """ route_message """
-        if len(self._boxes) > 0:
-            self._boxes[0].on_message(message)
-
-    def set_return(self, return_to):
-        """ set_return """
-        box_count = len(self._boxes)
-        if box_count > 0:
-            terminus = self._boxes[box_count - 1]
-            terminus.set_is_fx_return(True)
-            terminus.set_outputs([*terminus.outputs, return_to])
 
 
 class MidiOut(MidiBox):
