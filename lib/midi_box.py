@@ -2,7 +2,7 @@
 midi_boxes.py
 """
 from copy import deepcopy
-from mido import open_output, open_input, Message  # pylint: disable=no-name-in-module
+from mido import Message
 
 
 class MidiBox:
@@ -37,10 +37,19 @@ class MidiBox:
     def on_message(self, message, fx_return=False):
         """on_message"""
         if message.type != 'clock':
-            if message.type == 'note_on' and message.velocity > 0:
-                self.on_note_on(message, fx_return)
-            elif message.type == 'note_off':
-                self.on_note_off(message, fx_return)
+            modified = self.modifier(message)
+            if isinstance(modified, list):
+                for note in modified:
+                    self.on_note(note, fx_return)
+            else:
+                self.on_note(message, fx_return)
+
+    def on_note(self, message, fx_return=False):
+        """on_note"""
+        if message.type == 'note_on' and message.velocity > 0:
+            self.on_note_on(message, fx_return)
+        elif message.type == 'note_off':
+            self.on_note_off(message, fx_return)
 
     def on_note_on(self, message, fx_return=False):
         """on_note_on"""
@@ -51,49 +60,16 @@ class MidiBox:
         """on_note_off"""
         self.route_message(message, fx_return)
         self.notes_on = list(
-            filter(lambda note: note == message.note, self.notes_on))
+            filter(lambda note: note != message.note, self.notes_on))
 
     def route_message(self, message, fx_return=False):
         """route_message"""
-        message = self.modifier(message)
         if self._fx_loop and not fx_return:
             self._fx_loop.on_message(message)
         elif len(self.outputs) > 0:
             # TODO: Figure out how to run these outputs in parallel
             for output in self.outputs:
                 output.on_message(message, self._is_fx_return)
-
-
-class MidiOut(MidiBox):
-    """
-    MidiOut
-    """
-
-    def __init__(self, output_name):
-        self.output = open_output(output_name)
-        self.name = output_name
-        print('opened {}'.format(output_name))
-        super().__init__()
-
-    def route_message(self, message, fx_return=False):
-        """ route_message """
-        if isinstance(message, list):
-            for note in message:
-                self.output.send(note)
-        else:
-            self.output.send(message)
-
-
-class MidiIn(MidiBox):
-    """
-    MidiIn
-    """
-
-    def __init__(self, input_name):
-        self.input = open_input(input_name)
-        self.name = input_name
-        self.input.callback = self.on_message
-        super().__init__()
 
 
 class Harmonizer(MidiBox):
@@ -106,10 +82,8 @@ class Harmonizer(MidiBox):
         self.voices = voices or []
         super().__init__()
 
-    def on_message(self, message, fx_return=False):
-        super().on_message(message, fx_return)
-        for voice in self.voices:
-            super().on_message(message.copy(note=message.note + voice), fx_return)
+    def modifier(self, message):
+        return [message, *[message.copy(note=message.note + voice) for voice in self.voices]]
 
 
 class Shadow(MidiBox):
@@ -119,27 +93,22 @@ class Shadow(MidiBox):
 
     def __init__(self):
         self.name = 'shadow'
-        self.note_cache = []
-        self.interval = 3
-        self.feedback = 2
-        self.decay_factor = 0.3
+        self.message_cache = []
+        self.period = 2
+        self.decay_by = 0.3
+        self.repeat = 2
+        self.length = self.period * self.repeat
+
         super().__init__()
 
     def modifier(self, message):
-        self.note_cache.insert(0, message)
         messages = [message]
-        for i in range(self.feedback):
-            if i * self.interval < len(self.note_cache):
-                to_add = self.note_cache[i * self.interval]
-                messages.append(to_add.copy(velocity=round(
-                    to_add.velocity * self.decay_factor)
-                ))
-            else:
-                break
-
-        if len(self.note_cache) > self.interval * self.feedback:
-            self.note_cache.pop()
-
+        for i in range(self.period - 1, len(self.message_cache), self.period):
+            self.message_cache[i].velocity *= self.decay_by
+            messages.append(self.message_cache[i])
+        self.message_cache.insert(0, message)
+        if len(self.message_cache) > self.length:
+            self.message_cache.pop()
         return messages
 
 

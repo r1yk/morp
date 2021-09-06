@@ -20,6 +20,12 @@ class MockMidiMessage:
         self.note = note
         self.velocity = velocity
 
+    def copy(self, message_type=None, note=None, velocity=None):
+        return MockMidiMessage(
+            message_type=message_type or self.type,
+            note=note or self.note,
+            velocity=velocity or self.velocity)
+
 
 def mido_get_input_names():
     return ['device 1', 'device 2']

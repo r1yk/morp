@@ -19,11 +19,7 @@ class MidiOut(MidiBox):
 
     def route_message(self, message, fx_return=False):
         """ route_message """
-        if isinstance(message, list):
-            for note in message:
-                self.output.send(note)
-        else:
-            self.output.send(message)
+        self.output.send(message)
 
 
 class MidiIn(MidiBox):
@@ -62,21 +58,3 @@ class Loop:
             terminus = self._boxes[box_count - 1]
             terminus.set_is_fx_return(True)
             terminus.set_outputs([*terminus.outputs, return_to])
-
-
-def get_midi_devices():
-    """ get_midi_devices """
-    in_ports = mido.get_input_names()
-    for i, port in enumerate(in_ports):
-        print(f"{i+1}: {port}")
-
-    in_choice = in_ports[int(input('Enter input port number: ')) - 1]
-    midi_in = MidiIn(in_choice)
-    out_ports = mido.get_output_names()
-    for i, port in enumerate(out_ports):
-        print(f"{i+1}: {port}")
-
-    out_choice = out_ports[int(input('Enter output port number: ')) - 1]
-    midi_out = MidiOut(out_choice)
-
-    return (midi_in, midi_out)
