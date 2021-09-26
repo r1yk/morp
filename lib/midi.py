@@ -12,10 +12,22 @@ class MidiOut(MidiBox):
     MidiOut
     """
 
-    def __init__(self, output_name):
-        self.name = output_name
-        self.output = mido.open_output(output_name)
+    def __init__(self, output_name=None):
+        self.output = output_name
         super().__init__()
+
+    @property
+    def output(self):
+        """ output getter """
+        return self._output
+
+    @output.setter
+    def output(self, output_name):
+        self.name = output_name
+        if output_name:
+            self._output = mido.open_output(output_name)
+        else:
+            self._output = None
 
     def route_message(self, message, fx_return=False):
         """ route_message """
@@ -28,10 +40,22 @@ class MidiIn(MidiBox):
     """
 
     def __init__(self, input_name=os.getenv('DEFAULT_MIDI_INPUT')):
-        self.name = input_name
-        self.input = mido.open_input(input_name)
-        self.input.callback = self.on_message
+        self.input = input_name
         super().__init__()
+
+    @property
+    def input(self):
+        """ input setter """
+        return self._input
+
+    @input.setter
+    def input(self, input_name):
+        self.name = input_name
+        if input_name:
+            self._input = mido.open_input(input_name)
+            self._input.callback = self.on_message
+        else:
+            self._input = None
 
 
 class Loop:
