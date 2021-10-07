@@ -43,6 +43,8 @@ class MidiBox:
                     self.on_note(note, fx_return)
             else:
                 self.on_note(message, fx_return)
+        else:
+            self.on_clock(message, fx_return)
 
     def on_note(self, message, fx_return=False):
         """on_note"""
@@ -61,6 +63,10 @@ class MidiBox:
         self.route_message(message, fx_return)
         self.notes_on = list(
             filter(lambda note: note != message.note, self.notes_on))
+
+    def on_clock(self, _, fx_return=False):
+        """ on_clock """
+        self.route_message(_, fx_return)
 
     def route_message(self, message, fx_return=False):
         """route_message"""
@@ -94,9 +100,9 @@ class Shadow(MidiBox):
     def __init__(self):
         self.name = 'shadow'
         self.message_cache = []
-        self.period = 2
-        self.decay_by = 0.3
-        self.repeat = 2
+        self.period = 7
+        self.decay_by = 0.8
+        self.repeat = 5
         self.length = self.period * self.repeat
 
         super().__init__()
@@ -104,7 +110,8 @@ class Shadow(MidiBox):
     def modifier(self, message):
         messages = [message]
         for i in range(self.period - 1, len(self.message_cache), self.period):
-            self.message_cache[i].velocity *= self.decay_by
+            self.message_cache[i].velocity = round(
+                self.message_cache[i].velocity * self.decay_by)
             messages.append(self.message_cache[i])
         self.message_cache.insert(0, message)
         if len(self.message_cache) > self.length:
