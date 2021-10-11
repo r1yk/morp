@@ -8,5 +8,6 @@ platformdirs==2.3.0
 pycodestyle==2.7.0
 pylint==2.10.2
 python-dotenv==0.19.0
+python-rtmidi==1.4.9
 toml==0.10.2
 wrapt==1.12.1
