@@ -29,7 +29,7 @@ class MidiOut(MidiBox):
         else:
             self._output = None
 
-    def route_message(self, message, fx_return=False):
+    def route_message(self, message):
         """ route_message """
         self.output.send(message)
 
@@ -80,5 +80,5 @@ class Loop:
         box_count = len(self._boxes)
         if box_count > 0:
             terminus = self._boxes[box_count - 1]
-            terminus.set_is_fx_return(True)
-            terminus.set_outputs([*terminus.outputs, return_to])
+            terminus.is_fx_return = True
+            terminus.set_outputs([*return_to.outputs])

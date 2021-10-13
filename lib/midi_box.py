@@ -10,11 +10,11 @@ class MidiBox:
     MidiBox
     """
 
-    def __init__(self, outputs=None):
+    def __init__(self, outputs=None, fx_return=False):
         self.set_outputs(outputs or [])
         self.notes_on = []
         self._fx_loop = None
-        self._is_fx_return = False
+        self._is_fx_return = fx_return
 
     def set_outputs(self, outputs):
         """set_outputs"""
@@ -30,52 +30,57 @@ class MidiBox:
         new_loop.set_return(self)
         self._fx_loop = new_loop
 
-    def set_is_fx_return(self, is_return=True):
-        """set_is_fx_return"""
-        self._is_fx_return = is_return
+    @property
+    def is_fx_return(self):
+        """ is_fx_return getter """
+        return self._is_fx_return
 
-    def on_message(self, message, fx_return=False):
+    @is_fx_return.setter
+    def is_fx_return(self, fx_return: bool):
+        self._is_fx_return = fx_return
+
+    def on_message(self, message):
         """on_message"""
         if message.type != 'clock':
             modified = self.modifier(message)
             if isinstance(modified, list):
                 for note in modified:
-                    self.on_note(note, fx_return)
+                    self.on_note(note)
             else:
-                self.on_note(message, fx_return)
+                self.on_note(message)
         else:
-            self.on_clock(message, fx_return)
+            self.on_clock(message)
 
-    def on_note(self, message, fx_return=False):
+    def on_note(self, message):
         """on_note"""
         if message.type == 'note_on' and message.velocity > 0:
-            self.on_note_on(message, fx_return)
+            self.on_note_on(message)
         elif message.type == 'note_off':
-            self.on_note_off(message, fx_return)
+            self.on_note_off(message)
 
-    def on_note_on(self, message, fx_return=False):
+    def on_note_on(self, message):
         """on_note_on"""
-        self.route_message(message, fx_return)
+        self.route_message(message)
         self.notes_on = list(set([*self.notes_on, message.note]))
 
-    def on_note_off(self, message, fx_return=False):
+    def on_note_off(self, message):
         """on_note_off"""
-        self.route_message(message, fx_return)
+        self.route_message(message)
         self.notes_on = list(
             filter(lambda note: note != message.note, self.notes_on))
 
-    def on_clock(self, _, fx_return=False):
+    def on_clock(self, message):
         """ on_clock """
-        self.route_message(_, fx_return)
+        self.route_message(message)
 
-    def route_message(self, message, fx_return=False):
+    def route_message(self, message):
         """route_message"""
-        if self._fx_loop and not fx_return:
+        if self._fx_loop and not self.is_fx_return:
             self._fx_loop.on_message(message)
         elif len(self.outputs) > 0:
             # TODO: Figure out how to run these outputs in parallel
             for output in self.outputs:
-                output.on_message(message, self._is_fx_return)
+                output.on_message(message)
 
 
 class Harmonizer(MidiBox):
@@ -130,16 +135,16 @@ class Pedal(MidiBox):
         self.pedal_notes = []
         super().__init__()
 
-    def on_note_on(self, message, fx_return=False):
+    def on_note_on(self, message):
         if self.pedaling:
             self.pedaling = False
             for note in self.pedal_notes:
-                super().on_note_off(Message('note_off', note=note), fx_return)
+                super().on_note_off(Message('note_off', note=note))
             self.notes_on = []
             self.pedal_notes = []
-        super().on_note_on(message, fx_return)
+        super().on_note_on(message)
 
-    def on_note_off(self, message, fx_return=False):
+    def on_note_off(self, message):
         self.pedal_notes = list(set([*self.pedal_notes, message.note]))
         if len(self.notes_on) == 1:
             self.pedaling = True
