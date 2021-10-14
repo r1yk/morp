@@ -4,7 +4,7 @@ midi.py
 """
 import os
 import mido
-from lib.midi_box import MidiBox
+from .midi_box import MidiBox
 
 
 class MidiOut(MidiBox):

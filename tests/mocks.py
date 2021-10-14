@@ -1,7 +1,7 @@
 #pylint: disable-all
 from unittest.mock import Mock
 import mido
-from lib.midi import MidiOut
+from morp.midi import MidiOut
 
 
 class MockOutput:

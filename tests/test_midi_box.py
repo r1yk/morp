@@ -1,9 +1,9 @@
 # pylint: disable-all
 import unittest
 import mido
-import tests.mocks as mocks
-from lib.midi import MidiIn, MidiOut, Loop
-from lib.midi_box import Harmonizer, Shadow, Pedal
+from morp.midi import MidiIn, MidiOut, Loop
+from morp.effects import Harmonizer, Shadow, Freeze
+from .mocks import MockMidiMessage
 
 
 class TestMidiBox(unittest.TestCase):
@@ -18,7 +18,7 @@ class TestMidiBox(unittest.TestCase):
 
     def test_midi_input_output(self):
         # Create a mocked MIDI message and send it to the input
-        message = mocks.MockMidiMessage('note_on', 60, 60)
+        message = MockMidiMessage('note_on', 60, 60)
         self.midi_in.on_message(message)
         self.midi_out.output.send.assert_not_called()
 
@@ -39,66 +39,66 @@ class TestMidiBox(unittest.TestCase):
         harmonizer = Harmonizer(voices=[7, 12])
         self.midi_in.set_fx_loop(Loop([harmonizer]))
 
-        message = mocks.MockMidiMessage('note_on', 60, 60)
+        message = MockMidiMessage('note_on', 60, 60)
         self.midi_in.on_message(message)
         self.assertEqual(self.midi_out.output.send.call_count, 3)
-        self.assertEqual(len(self.midi_in.notes_on), 3)
+        self.assertEqual(len(self.midi_in._notes_on), 3)
 
         # Make sure sending a corresponding note_off turns off all harmonized notes
         self.midi_in.on_message(message.copy(message_type='note_off'))
         self.assertEqual(self.midi_out.output.send.call_count, 6)
-        self.assertEqual(len(self.midi_in.notes_on), 0)
+        self.assertEqual(len(self.midi_in._notes_on), 0)
 
         # Chain together two harmonizers for fun
         self.midi_out.output.send.reset_mock()
         harmonizer2 = Harmonizer(voices=[12, 24])
         self.midi_in.set_fx_loop(Loop([harmonizer, harmonizer2]))
-        message = mocks.MockMidiMessage('note_on', 60, 60)
+        message = MockMidiMessage('note_on', 60, 60)
         self.midi_in.on_message(message)
         self.assertEqual(self.midi_out.output.send.call_count, 9)
 
         # Make sure sending a corresponding note_off turns off all harmonized notes
         self.midi_in.on_message(message.copy(message_type='note_off'))
-        self.assertEqual(len(self.midi_in.notes_on), 0)
+        self.assertEqual(len(self.midi_in._notes_on), 0)
 
     def test_shadow(self):
         self.connect_output()
         shadow = Shadow()
         self.midi_in.set_fx_loop(Loop([shadow]))
 
-        message1 = mocks.MockMidiMessage('note_on', 60, 60)
+        message1 = MockMidiMessage('note_on', 60, 60)
         self.midi_in.on_message(message1)
         self.assertEqual(self.midi_out.output.send.call_count, 1)
-        self.assertEqual(len(self.midi_in.notes_on), 1)
+        self.assertEqual(len(self.midi_in._notes_on), 1)
 
-        message2 = mocks.MockMidiMessage('note_off', 60, 60)
+        message2 = MockMidiMessage('note_off', 60, 60)
         self.midi_in.on_message(message2)
         self.assertEqual(self.midi_out.output.send.call_count, 2)
-        self.assertEqual(len(self.midi_in.notes_on), 0)
+        self.assertEqual(len(self.midi_in._notes_on), 0)
 
-        message3 = mocks.MockMidiMessage('note_on', 64, 60)
-        self.midi_in.on_message(message1)
-        self.assertEqual(self.midi_out.output.send.call_count, 4)
-        self.assertEqual(len(self.midi_in.notes_on), 1)
-
-    def test_pedal(self):
-        self.connect_output()
-        pedal = Pedal()
-        self.midi_in.set_fx_loop(Loop([pedal]))
-
-        message1 = mocks.MockMidiMessage('note_on', 60, 60)
-        self.midi_in.on_message(message1)
-        self.assertEqual(self.midi_out.output.send.call_count, 1)
-
-        message2 = mocks.MockMidiMessage('note_off', 60, 60)
-        self.midi_in.on_message(message2)
-        self.assertEqual(self.midi_out.output.send.call_count, 1)
-        self.assertEqual(len(self.midi_out.notes_on), 1)
-
-        message3 = mocks.MockMidiMessage('note_on', 64, 60)
+        message3 = MockMidiMessage('note_on', 64, 60)
         self.midi_in.on_message(message1)
         self.assertEqual(self.midi_out.output.send.call_count, 3)
-        self.assertEqual(len(self.midi_out.notes_on), 1)
+        self.assertEqual(len(self.midi_in._notes_on), 1)
+
+    def test_freeze(self):
+        self.connect_output()
+        freeze = Freeze()
+        self.midi_in.set_fx_loop(Loop([freeze]))
+
+        message1 = MockMidiMessage('note_on', 60, 60)
+        self.midi_in.on_message(message1)
+        self.assertEqual(self.midi_out.output.send.call_count, 1)
+
+        message2 = MockMidiMessage('note_off', 60, 60)
+        self.midi_in.on_message(message2)
+        self.assertEqual(self.midi_out.output.send.call_count, 1)
+        self.assertEqual(len(self.midi_out._notes_on), 1)
+
+        message3 = MockMidiMessage('note_on', 64, 60)
+        self.midi_in.on_message(message1)
+        self.assertEqual(self.midi_out.output.send.call_count, 3)
+        self.assertEqual(len(self.midi_out._notes_on), 1)
 
 
 if __name__ == '__main__':

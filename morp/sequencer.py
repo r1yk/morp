@@ -2,8 +2,8 @@
 sequencer.py
 """
 from mido import Message
-from lib.midi import MidiIn
-from lib.midi_box import MidiBox
+from .midi import MidiIn
+from .midi_box import MidiBox
 
 
 class Sequencer(MidiBox):
@@ -92,21 +92,21 @@ class Sequencer(MidiBox):
     def load(self, data):
         """load"""
 
-    def on_note(self, message, fx_return=False):
-        super().on_note(message, fx_return)
-        if self.recording and not fx_return:
+    def on_note(self, message):
+        super().on_note(message)
+        if self.recording and not self.is_fx_return:
             notes = self._recording_pattern.get(self._clock_count, [])
             notes.append(message.copy())
             self._recording_pattern[self._clock_count] = notes
 
     def _metronome(self, message):
-        super().route_message(message, True)
+        super().route_message(message)
 
-    def on_clock(self, _, fx_return=False):
+    def on_clock(self, _):
         if self.playing:
             messages = self.pattern.get('notes').get(self._clock_count)
             for message in messages or []:
-                super().on_message(message.copy(), fx_return)
+                super().on_message(message.copy())
         if self.recording:
             position = self._clock_count % 24
             if position == 0:
