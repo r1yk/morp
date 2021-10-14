@@ -6,4 +6,3 @@ kivy
 .env
 .coverage
 htmlcov
-requirements.txt
