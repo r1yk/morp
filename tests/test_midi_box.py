@@ -42,12 +42,12 @@ class TestMidiBox(unittest.TestCase):
         message = MockMidiMessage('note_on', 60, 60)
         self.midi_in.on_message(message)
         self.assertEqual(self.midi_out.output.send.call_count, 3)
-        self.assertEqual(len(self.midi_in._notes_on), 3)
+        self.assertEqual(len(self.midi_out._notes_on), 3)
 
         # Make sure sending a corresponding note_off turns off all harmonized notes
         self.midi_in.on_message(message.copy(message_type='note_off'))
         self.assertEqual(self.midi_out.output.send.call_count, 6)
-        self.assertEqual(len(self.midi_in._notes_on), 0)
+        self.assertEqual(len(self.midi_out._notes_on), 0)
 
         # Chain together two harmonizers for fun
         self.midi_out.output.send.reset_mock()
@@ -59,7 +59,7 @@ class TestMidiBox(unittest.TestCase):
 
         # Make sure sending a corresponding note_off turns off all harmonized notes
         self.midi_in.on_message(message.copy(message_type='note_off'))
-        self.assertEqual(len(self.midi_in._notes_on), 0)
+        self.assertEqual(len(self.midi_out._notes_on), 0)
 
     def test_shadow(self):
         self.connect_output()
