@@ -18,6 +18,7 @@ class MidiBox:
     def set_outputs(self, outputs):
         """set_outputs"""
         self.outputs = outputs
+        self.set_fx_loop(self._fx_loop)
 
     def modifier(self, message):  # pylint: disable=no-self-use
         """modifier"""

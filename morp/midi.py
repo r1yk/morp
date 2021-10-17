@@ -29,7 +29,7 @@ class MidiOut(MidiBox):
         else:
             self._output = None
 
-    def route_message(self, message):
+    def route_message(self, message, through=False):
         """ route_message """
         self.output.send(message)
 
