@@ -100,7 +100,7 @@ class Sequencer(MidiBox):
             self._recording_pattern[self._clock_count] = notes
 
     def _metronome(self, message):
-        super().route_message(message)
+        super().route_message(message, through=True)
 
     def on_clock(self, _):
         if self.playing:

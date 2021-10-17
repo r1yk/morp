@@ -71,9 +71,9 @@ class MidiBox:
         """ on_clock """
         self.route_message(message)
 
-    def route_message(self, message):
+    def route_message(self, message, through=False):
         """route_message"""
-        if self._fx_loop and not self.is_fx_return:
+        if self._fx_loop and not (self.is_fx_return or through):
             self._fx_loop.on_message(message)
         elif len(self.outputs) > 0:
             # TODO: Figure out how to run these outputs in parallel
