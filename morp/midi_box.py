@@ -1,7 +1,9 @@
+# pylint: disable=no-member
 """
 midi_boxes.py
 """
 from copy import deepcopy
+import mido
 
 
 class MidiBox:
@@ -10,10 +12,10 @@ class MidiBox:
     """
 
     def __init__(self, outputs=None, fx_return=False):
-        self.set_outputs(outputs or [])
         self._notes_on = set()
         self._fx_loop = None
         self._is_fx_return = fx_return
+        self.set_outputs(outputs or [])
 
     def set_outputs(self, outputs):
         """set_outputs"""
@@ -26,9 +28,10 @@ class MidiBox:
 
     def set_fx_loop(self, loop=None):
         """set_fx_loop"""
-        new_loop = deepcopy(loop)
-        new_loop.set_return(self)
-        self._fx_loop = new_loop
+        if loop:
+            new_loop = deepcopy(loop)
+            new_loop.set_return(self)
+            self._fx_loop = new_loop
 
     @property
     def is_fx_return(self):
@@ -80,3 +83,70 @@ class MidiBox:
             # TODO: Figure out how to run these outputs in parallel
             for output in self.outputs:
                 output.on_message(message)
+
+
+class MidiOut(MidiBox):
+    """
+    MidiOut
+    """
+
+    def __init__(self, output_name: str):
+        self.name = output_name
+        self.output = output_name
+        super().__init__()
+
+    @property
+    def output(self):
+        """ output getter """
+        return self._output
+
+    @output.setter
+    def output(self, output_name):
+        self.name = output_name
+        if output_name:
+            self._output = mido.open_output(output_name)
+        else:
+            self._output = None
+
+    def route_message(self, message, through=False):
+        """ route_message """
+        self.output.send(message)
+
+    def close(self):
+        """Close the connection to this MIDI device"""
+        self.output.close()
+
+    def __hash__(self):
+        return hash(self.name)
+
+
+class MidiIn(MidiBox):
+    """
+    MidiIn
+    """
+
+    def __init__(self, input_name: str):
+        self.name = input_name
+        self.input = input_name
+        super().__init__()
+
+    @property
+    def input(self):
+        """ input setter """
+        return self._input
+
+    @input.setter
+    def input(self, input_name: str):
+        self.name = input_name
+        if input_name:
+            self._input = mido.open_input(input_name)
+            self._input.callback = self.on_message
+        else:
+            self._input = None
+
+    def close(self):
+        """Close the connection to this MIDI device"""
+        self.input.close()
+
+    def __hash__(self):
+        return hash(self.name)

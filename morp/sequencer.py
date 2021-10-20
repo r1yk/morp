@@ -2,8 +2,7 @@
 sequencer.py
 """
 from mido import Message
-from .midi import MidiIn
-from .midi_box import MidiBox
+from .midi_box import MidiBox, MidiIn
 
 
 class Sequencer(MidiBox):

@@ -1,7 +1,7 @@
 # pylint: disable-all
 import unittest
 import mido
-from morp.midi import MidiIn, MidiOut, Loop
+from morp import MidiIn, MidiOut, Loop
 from morp.effects import Harmonizer, Shadow, Freeze
 from .mocks import MockMidiMessage
 
@@ -30,7 +30,7 @@ class TestMidiBox(unittest.TestCase):
 
         # Add an empty Loop onto the input, and make sure nothing breaks
         self.midi_out.output.send.reset_mock()
-        self.midi_in.set_fx_loop(Loop([MidiIn()]))
+        self.midi_in.set_fx_loop(Loop([MidiIn('device 1')]))
         self.midi_in.on_message(message)
         self.midi_out.output.send.assert_called_once_with(message)
 
