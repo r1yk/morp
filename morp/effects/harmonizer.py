@@ -1,4 +1,5 @@
 """Harmonizer effects"""
+from typing import List, Set
 from mido import Message
 from ..midi_box import MidiBox
 
@@ -47,9 +48,18 @@ class Harmonizer(MidiBox):
     Harmonizer
     """
 
-    def __init__(self, voices=None):
-        self.voices = voices or []
+    def __init__(self, voices: Set[int]):
+        self._voices = voices or set()
         super().__init__()
 
-    def modifier(self, message):
+    @property
+    def voices(self) -> Set[int]:
+        """Return the current voices to overlay on incoming messages"""
+        return self._voices
+
+    @voices.setter
+    def voices(self, voices: Set[int]):
+        self._voices = voices
+
+    def modifier(self, message: Message) -> List[Message]:
         return [message, *[message.copy(note=message.note + voice) for voice in self.voices]]

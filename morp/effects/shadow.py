@@ -7,23 +7,50 @@ class Shadow(MidiBox):
     Shadow
     """
 
-    def __init__(self):
-        self.name = 'shadow'
-        self.message_cache = []
-        self.period = 7
-        self.decay_by = 0.8
-        self.repeat = 5
-        self.length = self.period * self.repeat
-
+    def __init__(self, period: int = 4, decay: float = 0.5, repeat: int = 2):
+        self._period = period
+        self._decay = decay
+        self._repeat = repeat
+        self._length = period * repeat
+        self._message_cache = []
         super().__init__()
+
+    @property
+    def decay(self):
+        """Get how much each successive appearance of a note should have its velocity reduced by"""
+        return self._decay
+
+    @decay.setter
+    def decay(self, decay: float):
+        self._decay = decay
+
+    @property
+    def period(self) -> int:
+        """Get the amount of notes that must be received before the first one is echoed back"""
+        return self._period
+
+    @period.setter
+    def period(self, period: int):
+        self._period = period
+        self._length = period * self.repeat
+
+    @property
+    def repeat(self) -> int:
+        """Get the maximum amount of times that a given note can be echoed back"""
+        return self._repeat
+
+    @repeat.setter
+    def repeat(self, repeat: int):
+        self._repeat = repeat
+        self._length = self.period * repeat
 
     def modifier(self, message):
         messages = [message]
-        for i in range(self.period - 1, len(self.message_cache), self.period):
-            self.message_cache[i].velocity = round(
-                self.message_cache[i].velocity * self.decay_by)
-            messages.append(self.message_cache[i])
-        self.message_cache.insert(0, message)
-        if len(self.message_cache) > self.length:
-            self.message_cache.pop()
+        for i in range(self.period - 1, len(self._message_cache), self.period):
+            self._message_cache[i].velocity = round(
+                self._message_cache[i].velocity * (1 - self.decay))
+            messages.append(self._message_cache[i])
+        self._message_cache.insert(0, message)
+        if len(self._message_cache) > self._length:
+            self._message_cache.pop()
         return messages
