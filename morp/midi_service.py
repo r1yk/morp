@@ -2,9 +2,9 @@
 """
 midi.py
 """
-from typing import List, Set, Union
+from typing import Set, Union
 import mido
-from .midi_box import MidiBox, MidiIn, MidiOut
+from .midi_box import MidiIn, MidiOut
 
 
 class MidiService:
@@ -80,34 +80,3 @@ class MidiService:
             if open_output.name == output_name:
                 open_output.close()
                 self.open_outputs.discard(open_output)
-
-
-class Loop:
-    """
-    Loop
-    """
-
-    def __init__(self, boxes: List[MidiBox]):
-        self._boxes = boxes or []
-        # Connect the interior MidiBoxes to each other
-        # The final one is left unconnected so that the Loop may be reused by many MidiBoxes
-        for i in range(0, len(boxes) - 1):
-            boxes[i].set_outputs([*boxes[i].outputs, boxes[i + 1]])
-
-    @property
-    def boxes(self) -> List[MidiBox]:
-        """Get a list of the MidiBoxes in this loop"""
-        return self._boxes
-
-    def on_message(self, message: mido.Message):
-        """ Simply forward the message to the first MidiBox in the loop. """
-        if len(self.boxes) > 0:
-            self.boxes[0].on_message(message)
-
-    def set_return(self, return_to: MidiBox):
-        """ set_return """
-        box_count = len(self._boxes)
-        if box_count > 0:
-            terminus = self._boxes[box_count - 1]
-            terminus.is_fx_return = True
-            terminus.set_outputs([*return_to.outputs])

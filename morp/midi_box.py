@@ -5,7 +5,6 @@ midi_boxes.py
 from copy import deepcopy
 from typing import List, Union
 import mido
-from .midi_service import Loop
 
 
 class MidiBox:
@@ -31,7 +30,7 @@ class MidiBox:
         """
         return message
 
-    def set_fx_loop(self, loop: Loop):
+    def set_fx_loop(self, loop: 'MidiLoop'):
         """set_fx_loop"""
         if loop:
             new_loop = deepcopy(loop)
@@ -80,7 +79,7 @@ class MidiBox:
         """ on_clock """
         self.route_message(message)
 
-    def route_message(self, message, through=False):
+    def route_message(self, message, through: bool = False):
         """route_message"""
         if self._fx_loop and not (self.is_fx_return or through):
             self._fx_loop.on_message(message)
@@ -155,3 +154,34 @@ class MidiIn(MidiBox):
 
     def __hash__(self):
         return hash(self.name)
+
+
+class MidiLoop:
+    """
+    Loop
+    """
+
+    def __init__(self, boxes: List[MidiBox]):
+        self._boxes = boxes or []
+        # Connect the interior MidiBoxes to each other
+        # The final one is left unconnected so that the Loop may be reused by many MidiBoxes
+        for i in range(0, len(boxes) - 1):
+            boxes[i].set_outputs([*boxes[i].outputs, boxes[i + 1]])
+
+    @property
+    def boxes(self) -> List[MidiBox]:
+        """Get a list of the MidiBoxes in this loop"""
+        return self._boxes
+
+    def on_message(self, message: mido.Message):
+        """ Simply forward the message to the first MidiBox in the loop. """
+        if len(self.boxes) > 0:
+            self.boxes[0].on_message(message)
+
+    def set_return(self, return_to: MidiBox):
+        """ set_return """
+        box_count = len(self._boxes)
+        if box_count > 0:
+            terminus = self._boxes[box_count - 1]
+            terminus.is_fx_return = True
+            terminus.set_outputs([*return_to.outputs])

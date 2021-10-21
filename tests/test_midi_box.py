@@ -1,7 +1,7 @@
 # pylint: disable-all
 import unittest
 import mido
-from morp import MidiIn, MidiOut, Loop
+from morp import MidiIn, MidiOut, MidiLoop
 from morp.effects import Harmonizer, Shadow, Freeze
 from .mocks import MockMidiMessage
 
@@ -28,16 +28,16 @@ class TestMidiBox(unittest.TestCase):
         self.midi_in.on_message(message)
         self.midi_out.output.send.assert_called_once_with(message)
 
-        # Add an empty Loop onto the input, and make sure nothing breaks
+        # Add an empty MidiLoop onto the input, and make sure nothing breaks
         self.midi_out.output.send.reset_mock()
-        self.midi_in.set_fx_loop(Loop([MidiIn('device 1')]))
+        self.midi_in.set_fx_loop(MidiLoop([MidiIn('device 1')]))
         self.midi_in.on_message(message)
         self.midi_out.output.send.assert_called_once_with(message)
 
     def test_harmonizer(self):
         self.connect_output()
         harmonizer = Harmonizer(voices=[7, 12])
-        self.midi_in.set_fx_loop(Loop([harmonizer]))
+        self.midi_in.set_fx_loop(MidiLoop([harmonizer]))
 
         message = MockMidiMessage('note_on', 60, 60)
         self.midi_in.on_message(message)
@@ -52,7 +52,7 @@ class TestMidiBox(unittest.TestCase):
         # Chain together two harmonizers for fun
         self.midi_out.output.send.reset_mock()
         harmonizer2 = Harmonizer(voices=[12, 24])
-        self.midi_in.set_fx_loop(Loop([harmonizer, harmonizer2]))
+        self.midi_in.set_fx_loop(MidiLoop([harmonizer, harmonizer2]))
         message = MockMidiMessage('note_on', 60, 60)
         self.midi_in.on_message(message)
         self.assertEqual(self.midi_out.output.send.call_count, 9)
@@ -64,7 +64,7 @@ class TestMidiBox(unittest.TestCase):
     def test_shadow(self):
         self.connect_output()
         shadow = Shadow()
-        self.midi_in.set_fx_loop(Loop([shadow]))
+        self.midi_in.set_fx_loop(MidiLoop([shadow]))
 
         message1 = MockMidiMessage('note_on', 60, 60)
         self.midi_in.on_message(message1)
@@ -84,7 +84,7 @@ class TestMidiBox(unittest.TestCase):
     def test_freeze(self):
         self.connect_output()
         freeze = Freeze()
-        self.midi_in.set_fx_loop(Loop([freeze]))
+        self.midi_in.set_fx_loop(MidiLoop([freeze]))
 
         message1 = MockMidiMessage('note_on', 60, 60)
         self.midi_in.on_message(message1)
