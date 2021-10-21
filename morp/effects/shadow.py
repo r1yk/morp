@@ -1,4 +1,6 @@
 """shadow.py"""
+from typing import List
+import mido
 from ..midi_box import MidiBox
 
 
@@ -44,7 +46,7 @@ class Shadow(MidiBox):
         self._repeat = repeat
         self._length = self.period * repeat
 
-    def modifier(self, message):
+    def modifier(self, message: mido.Message) -> List[mido.Message]:
         messages = [message]
         for i in range(self.period - 1, len(self._message_cache), self.period):
             self._message_cache[i].velocity = round(

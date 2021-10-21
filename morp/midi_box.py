@@ -3,7 +3,9 @@
 midi_boxes.py
 """
 from copy import deepcopy
+from typing import List, Union
 import mido
+from .midi_service import Loop
 
 
 class MidiBox:
@@ -17,16 +19,19 @@ class MidiBox:
         self._is_fx_return = fx_return
         self.set_outputs(outputs or [])
 
-    def set_outputs(self, outputs):
+    def set_outputs(self, outputs: List['MidiBox']):
         """set_outputs"""
         self.outputs = outputs
         self.set_fx_loop(self._fx_loop)
 
-    def modifier(self, message):  # pylint: disable=no-self-use
-        """modifier"""
+    def modifier(self, message: mido.Message) -> Union[mido.Message, List[mido.Message]]:
+        """
+        Change something about a message before sending it to an output.
+        Override this method in subclasses of MidiBox as desired!
+        """
         return message
 
-    def set_fx_loop(self, loop=None):
+    def set_fx_loop(self, loop: Loop):
         """set_fx_loop"""
         if loop:
             new_loop = deepcopy(loop)
@@ -42,7 +47,7 @@ class MidiBox:
     def is_fx_return(self, fx_return: bool):
         self._is_fx_return = fx_return
 
-    def on_message(self, message):
+    def on_message(self, message: mido.Message):
         """on_message"""
         if message.type != 'clock':
             modified = self.modifier(message)

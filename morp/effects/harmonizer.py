@@ -37,7 +37,6 @@ class Autotune(MidiBox):
             super().on_note(message)
         elif self.autocorrect:
             # Find the scale note that is closest to this note in either direction
-
             new_note = message.note + \
                 min([scale_note - note for scale_note in self.scale], key=abs)
             super().on_note(message.copy(note=new_note))
