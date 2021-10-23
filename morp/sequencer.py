@@ -1,6 +1,7 @@
 """
 sequencer.py
 """
+from typing import Union
 from mido import Message
 from .midi_box import MidiBox, MidiIn
 
@@ -28,7 +29,7 @@ class Sequencer(MidiBox):
         super().__init__()
 
     @property
-    def clock_source(self):
+    def clock_source(self) -> Union[MidiIn, None]:
         """ clock_source getter """
         return self._clock_source
 
@@ -37,31 +38,31 @@ class Sequencer(MidiBox):
         self._clock_source = clock_source
 
     @property
-    def count(self):
-        """ count getter """
+    def count(self) -> int:
+        """Get how many beats are in a measure (numerator of the time signature)"""
         return self._count
 
     @count.setter
-    def count(self, count):
+    def count(self, count: int):
         self._count = count
         self._clocks_per_measure = 24 * self._count
 
     @property
-    def subdivision(self):
-        """ subdivision getter """
+    def subdivision(self) -> int:
+        """Get the demoninator in the time signature"""
         return self._subdivision
 
     @subdivision.setter
-    def subdivision(self, subdivision):
+    def subdivision(self, subdivision: int):
         self._subdivision = subdivision
 
     @property
-    def pattern(self):
-        """ pattern getter """
+    def pattern(self) -> Union[dict, None]:
+        """Get the messages currently recorded for playback"""
         return self._pattern
 
     @pattern.setter
-    def pattern(self, new_pattern):
+    def pattern(self, new_pattern: dict):
         last_message = max(new_pattern.keys())
         self._pattern = {
             'notes': new_pattern,
@@ -69,27 +70,27 @@ class Sequencer(MidiBox):
         }
 
     @property
-    def playing(self):
-        """ playing getter """
+    def playing(self) -> bool:
+        """Get whether the sequencer is actively playing its pattern"""
         return self._playing
 
     @playing.setter
-    def playing(self, is_playing: bool):
-        self._recording = not is_playing
-        self._playing = is_playing
+    def playing(self, playing: bool):
+        self._recording = not playing
+        self._playing = playing
 
     @property
-    def recording(self):
-        """ recording getter """
+    def recording(self) -> bool:
+        """Get whether the sequencer is currently recording new messages into its pattern"""
         return self._recording
 
     @recording.setter
-    def recording(self, is_recording: bool):
-        self._playing = not is_recording
-        self._recording = is_recording
+    def recording(self, recording: bool):
+        self._playing = not recording
+        self._recording = recording
 
-    def load(self, data):
-        """load"""
+    def load(self, data: dict):
+        """Load messages previously stored as JSON"""
 
     def on_note(self, message):
         super().on_note(message)
