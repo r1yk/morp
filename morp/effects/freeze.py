@@ -5,7 +5,10 @@ from ..midi_box import MidiBox
 
 class Freeze(MidiBox):
     """
-    Freeze
+    `Freeze` is an effect that will defer calls to `note_off` by default.
+    Anytime that a `note_off` would result in all notes being off, `Freeze` will sustain
+    all previously received `note_on` events. All deferred calls to `note_off` are sent
+    on a subsequent `note_on` event.
     """
 
     def __init__(self):
@@ -33,6 +36,9 @@ class Freeze(MidiBox):
         If this was the last note in a group to be released, begin the freeze.
         """
         self._frozen_notes.add(message.note)
+
+        # If turning this note off will result in 0 remaining, turn the freeze on.
         if len(self._notes_on) == 1:
             self._frozen = True
+
         self._notes_on.discard(message.note)

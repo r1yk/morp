@@ -21,6 +21,7 @@ class Sequencer(MidiBox):
         self._clocks_per_measure = 24 * self._count
         self._clock_count = 0
         self._measure = 0
+        self._measures = 1
         self._count_in = 2
         self._pattern = None
         self._recording_pattern = {}
@@ -46,6 +47,15 @@ class Sequencer(MidiBox):
     def count(self, count: int):
         self._count = count
         self._clocks_per_measure = 24 * self._count
+
+    @property
+    def measures(self) -> int:
+        """Get how many measures are in this pattern"""
+        return self._measures
+
+    @measures.setter
+    def measures(self, measures: int) -> None:
+        self._measures = measures
 
     @property
     def subdivision(self) -> int:
@@ -94,7 +104,7 @@ class Sequencer(MidiBox):
 
     def on_note(self, message):
         super().on_note(message)
-        if self.recording and not self.is_fx_return:
+        if self.recording and not self.fx_return:
             notes = self._recording_pattern.get(self._clock_count, [])
             notes.append(message.copy())
             self._recording_pattern[self._clock_count] = notes
@@ -116,8 +126,7 @@ class Sequencer(MidiBox):
 
         self._clock_count += 1
         if self.playing:
-            self._clock_count %= self.pattern.get(
-                'measure_count', 1) * self._clocks_per_measure
+            self._clock_count %= self.measures * self._clocks_per_measure
 
     def record(self):
         """record"""

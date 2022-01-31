@@ -5,25 +5,34 @@ from ..midi_box import MidiBox
 
 
 class Autotune(MidiBox):
-    """Autotune"""
+    """
+    `Autotune` works like the name-brand equivalent. A `scale` can be provided that restricts
+    the pitches that are allowed. Each member of `scale` should be a scale tone between 0-12 where
+    0 corresponds to C, 3 corresponds to Eb, etc.
 
-    def __init__(self, scale: set = None, autocorrect: bool = True):
+    When `autocorrect=True` is used, notes that do not fall within the scale will be "rounded"
+    to their nearest neighbor within the scale.
+
+    When `autocorrect=False` is used, notes that do not fall within the scale are ignored entirely.
+    """
+
+    def __init__(self, scale: Set[int] = None, autocorrect: bool = True):
         self._scale = scale or set()
         self._autocorrect = autocorrect
         super().__init__()
 
     @property
     def scale(self) -> set:
-        """Return the scale."""
+        """Return the set of allowable scale tones."""
         return self._scale
 
     @scale.setter
-    def scale(self, scale: set) -> None:
+    def scale(self, scale: Set[int]) -> None:
         self._scale = set(scale)
 
     @property
     def autocorrect(self) -> bool:
-        """Return whether autocorrect is currently on."""
+        """Return whether `autocorrect` is currently on."""
         return self._autocorrect
 
     @autocorrect.setter
@@ -44,7 +53,8 @@ class Autotune(MidiBox):
 
 class Harmonizer(MidiBox):
     """
-    Harmonizer
+    `Harmonizer is a MIDI effect that overlays additional notes upon receiving
+    `note_on` messages.
     """
 
     def __init__(self, voices: Set[int]):

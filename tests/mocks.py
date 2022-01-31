@@ -14,7 +14,7 @@ class MockInput:
 
 
 class MockMidiMessage:
-    def __init__(self, message_type, note, velocity):
+    def __init__(self, message_type: str, note: int, velocity: int):
         self.type = message_type
         self.note = note
         self.velocity = velocity

@@ -6,7 +6,10 @@ from ..midi_box import MidiBox
 
 class Shadow(MidiBox):
     """
-    Shadow
+    `Shadow` is a MIDI effect that behaves a bit like a delay. The principal difference
+    is that unlike a delay, `Shadow` does not have an interval of time that defines when
+    a note will be echoed back. Instead, `Shadow` can serve requests like "echo this note
+    back to me after 3 additional notes have passed".
     """
 
     def __init__(self, period: int = 4, decay: float = 0.5, repeat: int = 2):
