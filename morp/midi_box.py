@@ -41,9 +41,9 @@ class MidiBox:
         """
         return message
 
-    def assign_fx_loop(self, loop: 'MidiLoop'):
+    def assign_fx_loop(self, loop: 'EffectsLoop'):
         """
-        Make a copy of an existing `MidiLoop`, and hook it up to the effect send/return.
+        Make a copy of an existing `EffectsLoop`, and hook it up to the effect send/return.
         """
         if loop:
             new_loop = deepcopy(loop)
@@ -89,7 +89,6 @@ class MidiBox:
         Handle MIDI `Messages` that where `type` is `note_on`.
         """
         if message.note not in self._notes_on:
-            print('route!')
             self.route_message(message)
             self._notes_on.add(message.note)
 
@@ -187,11 +186,11 @@ class MidiIn(MidiBox):
         return hash(self.name)
 
 
-class MidiLoop:
+class EffectsLoop:
     """
-    A `MidiLoop` is an ordered sequence of `MidiBoxes`.
+    A `EffectsLoop` is an ordered sequence of `MidiBoxes`.
     The output of one `MidiBox` is sent to the next.
-    Each instance of a `MidiLoop` may connect to its own output.
+    Each instance of a `EffectsLoop` may connect to its own output.
     """
 
     def __init__(self, boxes: List[MidiBox]):
@@ -212,7 +211,7 @@ class MidiLoop:
             self.boxes[0].on_message(message)
 
     def set_return(self, return_to: MidiBox):
-        """Specify where this instance of a `MidiLoop` should return its output."""
+        """Specify where this instance of a `EffectsLoop` should return its output."""
         box_count = len(self._boxes)
         if box_count > 0:
             terminus = self._boxes[box_count - 1]
