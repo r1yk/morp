@@ -3,6 +3,10 @@
 
 `morp` can be used as a virtual patch bay between MIDI-compliant entities like physical MIDI controllers connected via USB, and software instruments in your DAW of choice. In addition, morp provides MIDI "effects boxes" that are analogous to the effects pedals an electric guitarist might use. However, instead of manipulating audio signals, `morp`'s effects manipulate the MIDI messages themselves before they're synthesized as audio. `morp` provides a few default effects boxes that I thought were neat, and also allows the user to create their own custom effects.
 
+## Installation
+```sh
+pip install git+https://github.com/r1yk/morp.git
+```
 
 ## Examples
 
@@ -51,7 +55,7 @@ midi_input.assign_fx_loop(fx_loop)
 ```
 
 ### Creating custom effects
-A custom effect can be created quickly by creating a subclass of `MidiBox` and writing new implementations of its methods. For example, your custom effect may need to override `MidiBox.on_note_on` but not `Midi_Box.on_note_off`. Below is an example of a custom effect that simply reduces the pitch of all incoming notes by a half-step:
+A custom effect can be created quickly by creating a subclass of `MidiBox` and writing new implementations of its methods. For example, your custom effect may need to override `MidiBox.on_note_on` but not `MidiBox.on_note_off`. Below is an example of a custom effect that simply reduces the pitch of all incoming notes by a half-step:
 ```python
 from morp import MidiBox
 
@@ -64,4 +68,9 @@ custom_effect = CustomEffect()
 custom_fx_loop = EffectsLoop([custom_effect])
 midi_input.assign_fx_loop(custom_fx_loop)
 ```
-Refer to the `MidiBox` class in `morp/effects/midi_box.py` to see all the MIDI message handlers that are available to be overridden! 
+Refer to the `MidiBox` class in `morp/effects/midi_box.py` to see all the MIDI message handlers that are available to be overridden!
+
+### Running tests
+```sh
+python3 -m unittest discover -v -s ./tests -p test_*.py
+```
